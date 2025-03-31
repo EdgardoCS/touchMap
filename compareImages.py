@@ -9,8 +9,8 @@ import scipy.stats as stats
 import matplotlib.pyplot as plt
 
 # Load images
-image1 = Image.open('data/preferred/mergeData0.png').convert("RGBA")
-image2 = Image.open('data/received/mergeData0.png').convert("RGBA")
+image1 = Image.open('data/preferred/mergeData0.png') # could use .convert("RGBA")
+image2 = Image.open('data/received/mergeData0.png')
 
 # Convert to numpy arrays
 arr1 = np.array(image1)
@@ -24,19 +24,21 @@ alpha2 = arr2[:, :, 3].astype(float)
 diff_map = np.abs(alpha1 - alpha2)  # This acts as a "difference significance" map
 
 outline = Image.open("Body_chart_-_women-removebg-preview.png")
-outline_rezised = outline.resize((800, 300))
-
-# plt.imshow(outline_rezised)
+outline_resized = outline.resize((800, 300))
+plt.subplot(131)
+plt.imshow(outline_resized)
 # plt.show()
 
 box = (0, 0, 400, 300)
-outline_cropped = outline_rezised.crop(box)
+plt.subplot(132)
+outline_cropped = outline_resized.crop(box)
+plt.imshow(outline_cropped)
 
 # Plot the results
-plt.figure(figsize=(8, 6))
-
+plt.subplot(133)
 plt.imshow(diff_map, cmap='hot', interpolation='nearest')
 plt.colorbar(label="Touch intensity")
+
 plt.imshow(outline_cropped, alpha=0.7)
 plt.title("Pixel-wise Heatmap")
 plt.show()
