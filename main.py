@@ -61,8 +61,13 @@ def calculateHighest(pixel_data, width, height):
     return maximum
 
 
-location = "data/LovePreferredWomen/"
-target = "w1"
+location1 = "data/LovePreferredWomen/"
+location2 = "data/LoveReceivedWomen/"
+location = location2
+
+target1 = "w1"
+target2 = "w2"
+target = target1
 
 # Load images
 woman1 = Image.open(location + "w1" + ".png")
@@ -122,41 +127,49 @@ df1.to_csv("woman1_front_a.csv")
 df2.to_csv("woman2_front_a.csv")
 """
 
+new_image = Image.new(mode="RGBA", size=(400, 300))
+merge_pixels = new_image.load()
+for i in range(woman1_front.size[0]):
+    for j in range(woman1_front.size[1]):
+        if output_pixel1[i, j][0] == 255 or output_pixel2[i, j][0] == 255:
+            new_r = 255
+            new_b = 0
+            new_g = 0
+            new_alpha = output_pixel1[i, j][3] + output_pixel2[i, j][3]
+            new_pixel = (new_r, new_b, new_g, new_alpha)
+            merge_pixels[i, j] = new_pixel
+        else:
+            new_r = 0
+            new_b = 0
+            new_g = 0
+            new_alpha = 0
+            new_pixel = (new_r, new_b, new_g, new_alpha)
+            merge_pixels[i, j] = new_pixel
+        #print(merge_pixels[i, j])
 
-#TODO: find any value on R that is over or equal to 255, store it with and A value equals to the sum of the two sets of data
-
-image_merged = Image.alpha_composite(woman1_front, woman2_front)
-output = image_merged.load()
-
-for i in range(image_merged.size[0]):  # for every col:
-    for j in range(image_merged.size[1]):  # for every row:
-        print(output[i,j][3])
-image_merged.save("merged.png", "png")
-new = Image.open("merged.png")
-pixel = list(new.getdata())
-df = pd.DataFrame(pixel)
-df.to_csv("merged.csv")
+#new_image.save(location + "mergeData" + ".png", "png")
+# temp = Image.open(location +"mergeData.png")
+# pixel = list(temp.getdata())
+# df = pd.DataFrame(pixel)
+# df.to_csv("mergeData.csv")
 
 
-"""
-# Rewrite pixels to eliminate A band (transparency)
-new_pixels = image.load()
-for i in range(image.size[0]):  # for every col:
-    for j in range(image.size[1]):  # for every row:
-        new_pixels[i,j] = rgba2rgb(new_pixels[i,j])
-image.save(location + target + "_bg.png", "png")
-#image.show()
-"""
-
-"""
-# Read image, front and back using PIL.Image
-im1 = Image.open('front.png')
-im2 = Image.open('back.png')
-
-im1 = im1.convert('1')
-im2 = im2.convert('1')
-
-diff = ImageChops.logical_and(im1, im2)
-if diff.getbbox():
-    diff.show()
-"""
+# # Rewrite pixels to eliminate A band (transparency)
+# new_pixels = image.load()
+# for i in range(image.size[0]):  # for every col:
+#     for j in range(image.size[1]):  # for every row:
+#         new_pixels[i,j] = rgba2rgb(new_pixels[i,j])
+# image.save(location + target + "_bg.png", "png")
+# #image.show()
+#
+#
+# # Read image, front and back using PIL.Image
+# im1 = Image.open('front.png')
+# im2 = Image.open('back.png')
+#
+# im1 = im1.convert('1')
+# im2 = im2.convert('1')
+#
+# diff = ImageChops.logical_and(im1, im2)
+# if diff.getbbox():
+#     diff.show()
