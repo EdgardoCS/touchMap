@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import time as time
 from PIL import Image, ImageChops
-from nbformat.v4 import new_raw_cell
 
 
 def rgba2rgb(RGBA_color):
@@ -61,9 +60,9 @@ def calculateHighest(pixel_data, width, height):
     return maximum
 
 
-location1 = "data/LovePreferredWomen/"
-location2 = "data/LoveReceivedWomen/"
-location = location2
+location1 = "data/Love Preferred Women/"
+location2 = "data/Love Received Women/"
+location = location1
 
 target1 = "w1"
 target2 = "w2"
@@ -78,13 +77,13 @@ w1, h1 = woman1.size  # should be 800 x 300
 w2, h2 = woman2.size
 
 # ROI
-box = (0, 0, 400, 300)
-woman1_front = woman1.crop(box)
-woman2_front = woman2.crop(box)
+#box = (0, 0, 400, 300)
+#woman1_front = woman1.crop(box)
+#woman2_front = woman2.crop(box)
 
 # Read pixel information for each subject
-w1_pixels = woman1_front.load()
-w2_pixels = woman2_front.load()
+w1_pixels = woman1.load()
+w2_pixels = woman2.load()
 
 """
 woman1_front.save(location + "w1" + "_bg.png", "png")
@@ -104,12 +103,12 @@ df2.to_csv("woman2_front.csv")
 highest1 = calculateHighest(w1_pixels, w1, h1)
 highest2 = calculateHighest(w2_pixels, w1, h1)
 
-output_pixel1 = woman1_front.load()
-output_pixel2 = woman2_front.load()
+output_pixel1 = woman1.load()
+output_pixel2 = woman2.load()
 
 # Now that we have the highest possible number of intensity, lets normalize our data
-for i in range(woman1_front.size[0]):  # for every col:
-    for j in range(woman1_front.size[1]):  # for every row:
+for i in range(woman1.size[0]):  # for every col:
+    for j in range(woman1.size[1]):  # for every row:
         output_pixel1[i, j] = intensityNormalization(w1_pixels[i, j], highest1)  # Image 1
         output_pixel2[i, j] = intensityNormalization(w2_pixels[i, j], highest2)  # Image 2
 
@@ -127,10 +126,10 @@ df1.to_csv("woman1_front_a.csv")
 df2.to_csv("woman2_front_a.csv")
 """
 
-new_image = Image.new(mode="RGBA", size=(400, 300))
+new_image = Image.new(mode="RGBA", size=(800, 300))
 merge_pixels = new_image.load()
-for i in range(woman1_front.size[0]):
-    for j in range(woman1_front.size[1]):
+for i in range(woman1.size[0]):
+    for j in range(woman1.size[1]):
         if output_pixel1[i, j][0] == 255 or output_pixel2[i, j][0] == 255:
             new_r = 255
             new_b = 0
@@ -147,7 +146,7 @@ for i in range(woman1_front.size[0]):
             merge_pixels[i, j] = new_pixel
         #print(merge_pixels[i, j])
 
-#new_image.save(location + "mergeData" + ".png", "png")
+new_image.save(location + "mergeData" + ".png", "png")
 # temp = Image.open(location +"mergeData.png")
 # pixel = list(temp.getdata())
 # df = pd.DataFrame(pixel)
