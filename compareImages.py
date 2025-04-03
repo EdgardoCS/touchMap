@@ -3,12 +3,13 @@ author: EdgardoCS @FSU Jena
 date: 28/03/2025
 """
 
+import math
 import numpy as np
 from PIL import Image
+from matplotlib import cm
 import scipy.stats as stats
 import matplotlib.pyplot as plt
-from matplotlib import cm
-from mayavi import mlab
+from statsmodels.stats.multitest import multipletests
 
 
 def plotHeatmap(image_map1, image_map2, outline):
@@ -19,8 +20,22 @@ def plotHeatmap(image_map1, image_map2, outline):
     :param outline:
     :return:
     """
-    plt.imshow(image_map1, cmap='hot', interpolation='nearest')
-    plt.imshow(outline, alpha=0.5)
+    #target_w = 460
+    #target_h = 800
+    from scipy.ndimage import zoom
+
+
+    front_and_back = np.hstack((image_map1, image_map2))
+
+    print(front_and_back.shape)
+    print(outline.size)
+
+    resized_arr = zoom(front_and_back, (800/300, 400/800), order=1)
+
+    plt.imshow(resized_arr, cmap='hot', interpolation='nearest')
+    plt.colorbar(label="Touch intensity")
+    plt.imshow(outline)
+
     plt.show()
 
     # f, axs = plt.subplots(1, 2)
@@ -32,7 +47,7 @@ def plotHeatmap(image_map1, image_map2, outline):
     # plt.show()
 
 
-def plotSurface(image_map, x_axis, y_axis):
+def plotSurface(image_map, pvalues_map, x_axis, y_axis):
     """
 
     :param image_map:
@@ -41,34 +56,53 @@ def plotSurface(image_map, x_axis, y_axis):
     :return:
     """
     z = image_map  # Use the values directly as height
-    # z = (image_map - np.min(image_map)) / (np.max(image_map) - np.min(image_map))  # Normalize to [0,1]
-    # z = (image_map - np.min(image_map)) / (np.max(image_map) - np.min(image_map))  # Normalize
-    # z = np.clip(z)  # Ensure values stay between 0 and 1
 
     # t value from https://www.sjsu.edu/faculty/gerstman/StatPrimer/t-table.pdf
 
-    new_z = np.where(z < 12.71, np.nan, z)
+    z_significant = np.where(z < 12.71, np.nan, z)
     nx = x_axis
     ny = y_axis
     x1 = np.linspace(0, 10, ny)
     y1 = np.linspace(0, 10, nx)
     x, y = np.meshgrid(x1, y1)
 
-    # print(np.count_nonzero(z), "original z")
-    # print(np.count_nonzero(new_z), "new z")
+    nan_mask = np.isnan(pvalues_map)
+    valid_p_values = pvalues_map[~nan_mask]
 
-    fig1 = plt.figure()
-    ax = fig1.add_subplot(projection='3d')
-    ax.view_init(elev=0, azim=-50, roll=0)
-    ax.plot_wireframe(x, y, new_z, rstride=10, cstride=10)
-    plt.title("t values above p (p = 0,05, t = 12,71)")
+    rejected, pvals_corrected_valid, _, _ = multipletests(valid_p_values, alpha=0.05, method='fdr_bh')
+    pvals_corrected = np.full_like(pvalues_map, np.nan, dtype=np.float64)
+    pvals_corrected[~nan_mask] = pvals_corrected_valid
 
-    fig2 = plt.figure()
-    ax = fig2.add_subplot(projection='3d')
-    ax.view_init(elev=0, azim=-50, roll=0)
-    ax.plot_wireframe(x, y, z, rstride=10, cstride=10)
-    plt.title("all t values")
+    # f, axs = plt.subplots(2, 2)
+    # axs[0,0].imshow(z, cmap='hot', interpolation='nearest')
+    # axs[0,1].imshow(pvalues_map, cmap='hot', interpolation='nearest')
+    # axs[1,1].imshow(pvals_corrected, cmap='hot', interpolation='nearest')
+    # plt.show()
+
+    plt.imshow(z, cmap='hot', interpolation='nearest')
+    plt.colorbar(label="Touch intensity")
+
+    plt.imshow(pvalues_map, cmap='hot', interpolation='nearest')
+    plt.colorbar(label="Touch intensity")
+
+    plt.imshow(pvals_corrected, cmap='hot', interpolation='nearest')
+    plt.colorbar(label="Touch intensity")
+
     plt.show()
+
+    # fig1 = plt.figure()
+    # ax = fig1.add_subplot(projection='3d')
+    # ax.view_init(elev=0, azim=-50, roll=0)
+    # ax.plot_wireframe(x, y, z_significant, rstride=10, cstride=10)
+    # plt.title("significat t values (p = 0,05, t = 12,71)")
+
+    # fig3 = plt.figure()
+    # ax = fig3.add_subplot(projection='3d')
+    # ax.view_init(elev=0, azim=-50, roll=0)
+    # ax.plot_wireframe(x, y, pvals_corrected, rstride=10, cstride=10)
+    # plt.title("adjusted p-values")
+    #
+    # plt.show()
 
 
 def calculate_t(input1, input2):
@@ -78,10 +112,16 @@ def calculate_t(input1, input2):
     :param input2:
     :return:
     """
-    u = 0
-    t = (np.mean([input1, input2]) - u) / (stats.sem([input1, input2]))
-
-    return t
+    ttest = stats.ttest_1samp([input1, input2], popmean=0.0)
+    t = ttest.statistic
+    p = ttest.pvalue
+    # u = 0
+    # if input1 == input2 and input1 != 0 and input2 != 0: # just to avoid inf
+    #     input2 = input2 + 0.1
+    #     t = (np.mean([input1, input2]) - u) / (stats.sem([input1, input2]))
+    # else:
+    #     t = (np.mean([input1, input2]) - u) / (stats.sem([input1, input2])) # this is the actual code that works
+    return t, p
 
 
 def count_match(input1, input2):
@@ -93,7 +133,8 @@ def count_match(input1, input2):
     """
     n_match = 0
     n_unmatch = 0
-
+    ### WRONG! it is not about how many matched pixels are among the whole, it is only among the one that have signal!!
+    ### RECALCULATE
     for i in range(0, input1.shape[0]):
         for j in range(0, input1.shape[1]):
             if input1[i, j][3] != 0 and input2[i, j][3] != 0:
@@ -104,9 +145,10 @@ def count_match(input1, input2):
     return total_match
 
 
-# TODO: calculate % of match between two images (done)
-# Fit the image on body chart (heatmap)
-# TODO: FDR
+# TODO:
+#  calculate % of match between two images (done)
+#  Fit the image on body chart (heatmap)
+#  FDR
 
 # Load images
 image1 = Image.open('data/Love Preferred Women/mergeData.png')  # could use .convert("RGBA")
@@ -121,7 +163,6 @@ back2 = image2.crop((400, 0, 800, 300))
 
 # Convert to numpy arrays
 arr1 = np.array(front1)
-print(arr1.shape)
 arr2 = np.array(front2)
 arr3 = np.array(back1)
 arr4 = np.array(back2)
@@ -143,39 +184,10 @@ back_map = np.abs(alpha3 - alpha4)
 body_outline = Image.open("data/Female_bodychart_nobg.png")
 
 t_map = np.zeros(shape=alpha1.shape)
+p_map = np.zeros(shape=alpha1.shape)
 for i in range(front_map.shape[0]):
-    for j in range(front_map.shape[1]):
-        t_map[i, j] = calculate_t(alpha1[i, j], alpha2[i, j])
+     for j in range(front_map.shape[1]):
+         t_map[i, j], p_map[i, j] = calculate_t(alpha1[i, j], alpha2[i, j])
 
-# plotHeatmap(front_map, back_map, body_outline)
-# plotSurface(t_map, 300, 400)
-
-"""
-# Plot the results
-plt.imshow(final_im ,cmap='Greys', interpolation='nearest')
-plt.colorbar(label="Touch intensity")
-
-plt.imshow(body_outline, alpha=0.1)
-plt.title("Pixel-wise Heatmap")
-plt.show()
-
-new = []
-for i in range(diff_map1.shape[0]):
-    for j in range(diff_map1.shape[1]):
-        if diff_map1[i, j] != 0:
-            new.append([i, j, diff_map1[i, j]])
-        else:
-            new.append([i, j, 0])
-
-print(new)
-new = np.asarray(new)
-
-
-plt.imshow(new)
-plt.show()
-
-#x = new[1, :, :].astype(float)
-#y = new[:, 2, :].astype(float)
-#z = new[:, :, 3].astype(float)
-
-"""
+#plotHeatmap(front_map, back_map, body_outline)
+plotSurface(t_map, p_map, 300, 400)
