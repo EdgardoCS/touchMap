@@ -8,6 +8,7 @@ import numpy as np
 from PIL import Image
 from matplotlib import cm
 import scipy.stats as stats
+from scipy.ndimage import zoom
 import matplotlib.pyplot as plt
 from statsmodels.stats.multitest import multipletests
 
@@ -20,31 +21,14 @@ def plotHeatmap(image_map1, image_map2, outline):
     :param outline:
     :return:
     """
-    #target_w = 460
-    #target_h = 800
-    from scipy.ndimage import zoom
-
 
     front_and_back = np.hstack((image_map1, image_map2))
-
-    print(front_and_back.shape)
-    print(outline.size)
-
-    resized_arr = zoom(front_and_back, (800/300, 400/800), order=1)
+    resized_arr = zoom(front_and_back, (1, 400/800), order=1)  # Scale width only
 
     plt.imshow(resized_arr, cmap='hot', interpolation='nearest')
     plt.colorbar(label="Touch intensity")
     plt.imshow(outline)
-
     plt.show()
-
-    # f, axs = plt.subplots(1, 2)
-    # axs[0].imshow(image_map1, cmap='hot', interpolation='nearest')
-    # axs[1].imshow(image_map2, cmap='hot', interpolation='nearest')
-    # axs[0].axis("off")
-    # axs[1].axis("off")
-    # plt.subplots_adjust(wspace=0.0)
-    # plt.show()
 
 
 def plotSurface(image_map, pvalues_map, x_axis, y_axis):
@@ -82,11 +66,11 @@ def plotSurface(image_map, pvalues_map, x_axis, y_axis):
     plt.imshow(z, cmap='hot', interpolation='nearest')
     plt.colorbar(label="Touch intensity")
 
-    plt.imshow(pvalues_map, cmap='hot', interpolation='nearest')
-    plt.colorbar(label="Touch intensity")
+    #plt.imshow(pvalues_map, cmap='hot', interpolation='nearest')
+    #plt.colorbar(label="Touch intensity")
 
-    plt.imshow(pvals_corrected, cmap='hot', interpolation='nearest')
-    plt.colorbar(label="Touch intensity")
+    #plt.imshow(pvals_corrected, cmap='hot', interpolation='nearest')
+    #plt.colorbar(label="Touch intensity")
 
     plt.show()
 
@@ -115,12 +99,7 @@ def calculate_t(input1, input2):
     ttest = stats.ttest_1samp([input1, input2], popmean=0.0)
     t = ttest.statistic
     p = ttest.pvalue
-    # u = 0
-    # if input1 == input2 and input1 != 0 and input2 != 0: # just to avoid inf
-    #     input2 = input2 + 0.1
-    #     t = (np.mean([input1, input2]) - u) / (stats.sem([input1, input2]))
-    # else:
-    #     t = (np.mean([input1, input2]) - u) / (stats.sem([input1, input2])) # this is the actual code that works
+
     return t, p
 
 
@@ -146,9 +125,9 @@ def count_match(input1, input2):
 
 
 # TODO:
-#  calculate % of match between two images (done)
-#  Fit the image on body chart (heatmap)
-#  FDR
+#  calculate % of match between two images
+#  Fit the image on body chart (heatmap) (done)
+#  FDR (done)
 
 # Load images
 image1 = Image.open('data/Love Preferred Women/mergeData.png')  # could use .convert("RGBA")
@@ -181,13 +160,13 @@ front_map = np.abs(alpha1 - alpha2)  # This acts as a "difference significance" 
 back_map = np.abs(alpha3 - alpha4)
 
 # Load body map outline
-body_outline = Image.open("data/Female_bodychart_nobg.png")
+body_outline = Image.open("source/img/femalebody400300white.png")
 
-t_map = np.zeros(shape=alpha1.shape)
-p_map = np.zeros(shape=alpha1.shape)
-for i in range(front_map.shape[0]):
-     for j in range(front_map.shape[1]):
-         t_map[i, j], p_map[i, j] = calculate_t(alpha1[i, j], alpha2[i, j])
+# t_map = np.zeros(shape=alpha1.shape)
+# p_map = np.zeros(shape=alpha1.shape)
+# for i in range(front_map.shape[0]):
+#      for j in range(front_map.shape[1]):
+#          t_map[i, j], p_map[i, j] = calculate_t(alpha1[i, j], alpha2[i, j])
 
-#plotHeatmap(front_map, back_map, body_outline)
-plotSurface(t_map, p_map, 300, 400)
+plotHeatmap(front_map, back_map, body_outline)
+#plotSurface(t_map, p_map, 300, 400)
