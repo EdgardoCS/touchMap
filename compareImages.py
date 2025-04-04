@@ -67,7 +67,6 @@ def plot_t_p_map(image_map, pvalues_map, body_image, x_axis, y_axis):
     pvals_corrected[~nan_mask] = pvals_corrected_valid
 
     # Plotting
-    body_outlinewhite = Image.open("source/img/femalebody400300white.png")
     resized_tmap = zoom(z_significant, (1, 400 / 800), order=1)
     plt.figure(1)
     plt.imshow(resized_tmap, cmap='hot', interpolation='nearest')
