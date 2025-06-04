@@ -2,6 +2,8 @@
 author: EdgardoCS @FSU Jena
 date: 25/03/2025
 """
+
+import os
 import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
@@ -58,6 +60,15 @@ def calculateHighest(pixel_data, width, height):
             total.append(alpha_value)
     maximum = max(total)
     return maximum
+
+
+workingDir = os.listdir('data_test/')
+
+lovePrefW = workingDir[0]
+loveRecM = workingDir[1]
+sexPrefW = workingDir[2]
+sexRecM = workingDir[3]
+print(workingDir)
 
 
 location1 = "data/Love Preferred Women/"
@@ -144,31 +155,5 @@ for i in range(woman1.size[0]):
             new_alpha = 0
             new_pixel = (new_r, new_b, new_g, new_alpha)
             merge_pixels[i, j] = new_pixel
-        #print(merge_pixels[i, j])
 
 new_image.save(location + "mergeData" + ".png", "png")
-# temp = Image.open(location +"mergeData.png")
-# pixel = list(temp.getdata())
-# df = pd.DataFrame(pixel)
-# df.to_csv("mergeData.csv")
-
-
-# # Rewrite pixels to eliminate A band (transparency)
-# new_pixels = image.load()
-# for i in range(image.size[0]):  # for every col:
-#     for j in range(image.size[1]):  # for every row:
-#         new_pixels[i,j] = rgba2rgb(new_pixels[i,j])
-# image.save(location + target + "_bg.png", "png")
-# #image.show()
-#
-#
-# # Read image, front and back using PIL.Image
-# im1 = Image.open('front.png')
-# im2 = Image.open('back.png')
-#
-# im1 = im1.convert('1')
-# im2 = im2.convert('1')
-#
-# diff = ImageChops.logical_and(im1, im2)
-# if diff.getbbox():
-#     diff.show()
